@@ -34,27 +34,28 @@ curl -s https://private-registry.nginx.com/v2/nginx-ic-nap/nginx-plus-ingress/ta
 
 Note: `<nginx-one-eval.key>` and `<nginx-one-eval.key>` are the path and filename of your `nginx-one-eval.crt` and `nginx-one-eval.crt` files respectively
 
-Pick the latest `5.x` version (`5.2.1` at the time of writing)
+Pick the latest version (`5.3.0` at the time of writing)
 
 5. Apply NGINX Ingress Controller custom resources (make sure the URI below references the latest available `5.x` NGINX Ingress Controller version)
 
 ```code
-kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.2.1/deploy/crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.2.1/deploy/crds-nap-waf.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.0/deploy/crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.0/deploy/crds-nap-waf.yaml
 ```
 
 6. Install NGINX Ingress Controller with NGINX App Protect through its Helm chart (set `nginx.image.tag` to the latest `5.x` available NGINX Ingress Controller version)
 
 ```code
 helm install nic oci://ghcr.io/nginx/charts/nginx-ingress \
-  --version 2.3.1 \
+  --version 2.4.0 \
   --set controller.image.repository=private-registry.nginx.com/nginx-ic-nap/nginx-plus-ingress \
-  --set controller.image.tag=5.2.1 \
+  --set controller.image.tag=5.3.0 \
   --set controller.nginxplus=true \
   --set controller.appprotect.enable=true \
   --set controller.serviceAccount.imagePullSecretName=regcred \
   --set controller.mgmt.licenseTokenSecretName=license-token \
-  --set controller.service.type=NodePort \
+  --set controller.service.type=LoadBalancer \
+  --set nginx.service.loadBalancerClass=service.k8s.aws/nlb \
   -n nginx-ingress
 ```
 
@@ -68,7 +69,7 @@ Pod should be in the `Running` state
 
 ```code
 NAME                                            READY   STATUS    RESTARTS   AGE
-nic-nginx-ingress-controller-77955c859b-4sdtg   1/1     Running   0          31s
+nic-nginx-ingress-controller-5955df45b4-n7sd9   1/1     Running   0          4m57s
 ```
 
 8. Check NGINX Ingress Controller logs
@@ -80,16 +81,16 @@ kubectl logs -l app.kubernetes.io/instance=nic -n nginx-ingress -c nginx-ingress
 Output should be similar to
 
 ```code
-I20251022 11:27:02.104116   1 main.go:108] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress", UID:"238deede-887a-4161-b0a7-057b00e537b7", APIVersion:"v1", ResourceVersion:"69373639", FieldPath:""}): type: 'Normal' reason: 'Updated' ConfigMap nginx-ingress/nic-nginx-ingress updated without error
-I20251022 11:27:02.104163   1 main.go:108] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress-mgmt", UID:"ff0b4467-0b7b-42f0-b62e-8a64e929364f", APIVersion:"v1", ResourceVersion:"69373640", FieldPath:""}): type: 'Normal' reason: 'Updated' MGMT ConfigMap nginx-ingress/nic-nginx-ingress-mgmt updated without error
-2025/10/22 11:27:02 [notice] 17#17: signal 17 (SIGCHLD) received from 22
-2025/10/22 11:27:02 [notice] 17#17: worker process 22 exited with code 0
-2025/10/22 11:27:02 [notice] 17#17: signal 29 (SIGIO) received
-2025/10/22 11:27:02 [notice] 21#21: APP_PROTECT { "event": "waf_disconnected", "enforcer_thread_id": 0, "worker_pid": 21, "mode": "operational", "mode_changed": false}
-2025/10/22 11:27:02 [notice] 21#21: exit
-2025/10/22 11:27:05 [notice] 17#17: signal 17 (SIGCHLD) received from 21
-2025/10/22 11:27:05 [notice] 17#17: worker process 21 exited with code 0
-2025/10/22 11:27:05 [notice] 17#17: signal 29 (SIGIO) received
+2025/12/10 08:16:27 [notice] 21#21: APP_PROTECT { "event": "waf_disconnected", "enforcer_thread_id": 0, "worker_pid": 21, "mode": "operational", "mode_changed": false}
+2025/12/10 08:16:27 [notice] 22#22: exit
+2025/12/10 08:16:27 [notice] 21#21: exit
+I20251210 08:16:27.235665   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress", UID:"8ce771c9-90cf-4abd-b994-4b922c91312f", APIVersion:"v1", ResourceVersion:"80644098", FieldPath:""}): type: 'Normal' reason: 'Updated' ConfigMap nginx-ingress/nic-nginx-ingress updated without error
+I20251210 08:16:27.235779   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress-mgmt", UID:"c6baba3c-daec-49ba-a45f-12a3cd330523", APIVersion:"v1", ResourceVersion:"80644096", FieldPath:""}): type: 'Normal' reason: 'Updated' MGMT ConfigMap nginx-ingress/nic-nginx-ingress-mgmt updated without error
+2025/12/10 08:16:27 [notice] 17#17: signal 17 (SIGCHLD) received from 22
+2025/12/10 08:16:27 [notice] 17#17: worker process 21 exited with code 0
+2025/12/10 08:16:27 [notice] 17#17: worker process 22 exited with code 0
+2025/12/10 08:16:27 [notice] 17#17: signal 29 (SIGIO) received
+2025/12/10 08:16:27 [notice] 17#17: signal 17 (SIGCHLD) received from 21
 ```
 
 9. Check Kubernetes service status
@@ -101,8 +102,8 @@ kubectl get svc -n nginx-ingress
 NGINX Ingress Controller should be listening on TCP ports 80 and 443
 
 ```code
-NAME                           TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-nic-nginx-ingress-controller   NodePort   10.101.129.241   <none>        80:31282/TCP,443:30332/TCP   42s
+NAME                           TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+nic-nginx-ingress-controller   NodePort   10.110.82.148   <none>        80:32697/TCP,443:30304/TCP   6m
 ```
 
 10. Check the `ingressclass`
@@ -115,7 +116,7 @@ The `nginx` ingressclass should be available
 
 ```code
 NAME    CONTROLLER                     PARAMETERS   AGE
-nginx   nginx.org/ingress-controller   <none>       70s
+nginx   nginx.org/ingress-controller   <none>       6m14s
 ```
 
 ## Uninstalling
@@ -135,6 +136,6 @@ kubectl delete namespace nginx-ingress
 * Delete custom resources
 
 ```code
-kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.2.1/deploy/crds.yaml
-kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.2.1/deploy/crds-nap-waf.yaml
+kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.0/deploy/crds.yaml
+kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.0/deploy/crds-nap-waf.yaml
 ```
