@@ -54,8 +54,7 @@ helm install nic oci://ghcr.io/nginx/charts/nginx-ingress \
   --set controller.appprotect.enable=true \
   --set controller.serviceAccount.imagePullSecretName=regcred \
   --set controller.mgmt.licenseTokenSecretName=license-token \
-  --set controller.service.type=LoadBalancer \
-  --set nginx.service.loadBalancerClass=service.k8s.aws/nlb \
+  --set controller.service.type=NodePort \
   -n nginx-ingress
 ```
 
