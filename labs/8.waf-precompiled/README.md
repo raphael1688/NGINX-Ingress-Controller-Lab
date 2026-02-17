@@ -1,6 +1,67 @@
-# NGINX App Protect WAF
+# F5 WAF for NGINX
 
 This use case applies WAF protection to a sample application exposed through NGINX Ingress Controller
+
+NGINX Ingress Controller needs to be deployed with the WAF in precompiled mode, see [DEPLOYING-WAFv5.md](/DEPLOYING-WAFv5.md)
+
+Compile the policy bundle
+```code
+cd artifacts
+chmod 777 .
+docker run --rm \
+ -v $(pwd):$(pwd) \
+ waf-compiler-5.11.0:custom \
+ -include-source -full-export -g $(pwd)/global_settings.json -p $(pwd)/waf_policy.json -o $(pwd)/waf_policy.tgz
+```
+
+The output should be similar to
+```code
+{
+  "completed_successfully": true,
+  "compiler_engine": "express",
+  "compiler_version": "11.608.0",
+  "filename": "/home/f5/work/NGINX-Ingress-Controller-Lab/labs/8.waf-precompiled/artifacts/waf_policy.tgz",
+  "file_size": 1862742,
+  "attack_signatures_package": {
+    "version": "2026.02.11",
+    "revision_datetime": "2026-02-11T14:34:04Z"
+  },
+  "bot_signatures_package": {
+    "version": "2026.02.11",
+    "revision_datetime": "2026-02-11T15:20:49Z"
+  },
+  "threat_campaigns_package": {
+    "version": "2026.02.16",
+    "revision_datetime": "2026-02-16T10:33:29Z"
+  }
+}
+```
+
+The policy has been compiled into `waf_policy.tgz`
+
+Compile the WAF log profile
+```code
+docker run \
+  -v $(pwd):$(pwd) \
+  waf-compiler-5.11.0:custom \
+  -l $(pwd)/log_profile.json -o $(pwd)/log_profile.tgz
+```
+
+The output should be similar to
+```code
+{
+  "filename": "/home/f5/work/NGINX-Ingress-Controller-Lab/labs/8.waf-precompiled/artifacts/log_profile.tgz",
+  "file_size": 1691,
+  "completed_successfully": true,
+  "compiler_engine": "full",
+  "compiler_version": "11.608.0"
+}
+```
+
+The log profile has been compiled into `log_profile.tgz`
+
+Copy the compiled policy bundle and the compiled log profile to the relevant pods
+
 
 Get NGINX Ingress Controller Node IP, HTTP and HTTPS NodePorts
 ```code
@@ -16,7 +77,7 @@ echo -e "NIC address: $NIC_IP\nHTTP port  : $HTTP_PORT\nHTTPS port : $HTTPS_PORT
 
 `cd` into the lab directory
 ```code
-cd ~/NGINX-Ingress-Controller-Lab/labs/7.app-protect-waf
+cd ~/NGINX-Ingress-Controller-Lab/labs/8.waf-precompiled
 ```
 
 Deploy the sample web applications
@@ -29,7 +90,7 @@ Deploy the syslog service to receive NGINX App Protect security violations logs
 kubectl apply -f 1.syslog.yaml
 ```
 
-Deploy the NGINX App Protect policy resources
+Deploy the F5 WAF for NGINX policy resources
 ```code
 kubectl apply -f 2.ap-apple-uds.yaml
 ```
