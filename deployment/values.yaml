@@ -1,0 +1,34 @@
+controller:
+  image:
+    repository: private-registry.nginx.com/nginx-ic-nap/nginx-plus-ingress
+    tag: 5.3.4
+  nginxplus: true
+  appprotect:
+    enable: true
+    v5: true
+    volumes:
+      - name: app-protect-config
+        emptyDir: {}
+      - name: app-protect-bd-config
+        persistentVolumeClaim:
+          claimName: app-protect-bd-config-pvc
+      - name: app-protect-bundles
+        persistentVolumeClaim:
+          claimName: app-protect-bundles-pvc
+    volumeMounts:
+      - name: app-protect-config
+        mountPath: /etc/app_protect/conf
+      - name: app-protect-bd-config
+        mountPath: /opt/app_protect/bd_config
+      - name: app-protect-bundles
+        mountPath: /etc/app_protect/bundles
+    pvc:
+      enable: true
+      bundlesPvc:
+        size: 10Gi
+  serviceAccount:
+    imagePullSecretName: regcred
+  mgmt:
+    licenseTokenSecretName: license-token
+  service:
+    type: NodePort
