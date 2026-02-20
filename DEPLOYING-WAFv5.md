@@ -37,22 +37,36 @@ Note: `<nginx-one-eval.key>` and `<nginx-one-eval.key>` are the path and filenam
 Pick the latest version (`5.3.4` at the time of writing)
 
 5. Apply NGINX Ingress Controller custom resources (make sure the URI below references the latest available `5.x` NGINX Ingress Controller version)
-
 ```code
 kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.4/deploy/crds.yaml
 kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.4/deploy/crds-nap-waf.yaml
 ```
 
-6. Install NGINX Ingress Controller with NGINX App Protect through its Helm chart (set `nginx.image.tag` to the latest `5.x` available NGINX Ingress Controller version)
+6. Create the PVCs to store compiled WAF policy bundles and logging profiles
+```code
+kubectl apply -f ./deployment/pvcs.yaml
+```
+
+7. Install NGINX Ingress Controller with NGINX App Protect through its Helm chart (set `nginx.image.tag` to the latest `5.x` available NGINX Ingress Controller version and adjust the chart version accordingly)
 
 ```code
 helm install nic oci://ghcr.io/nginx/charts/nginx-ingress \
   --version 2.4.4 \
-  -f deployment/values.yaml \
+  --set controller.image.repository=private-registry.nginx.com/nginx-ic-nap-v5/nginx-plus-ingress \
+  --set controller.image.tag=5.3.4 \
+  --set controller.nginxplus=true \
+  --set controller.appprotect.enable=true \
+  --set controller.appprotect.v5=true \
+  --set-json 'controller.appprotect.volumes=[{"name":"app-protect-bd-config","emptyDir":{}},{"name":"app-protect-config","emptyDir":{}},{"name":"app-protect-bundles","persistentVolumeClaim":{"claimName":"task-pv-claim"}}]' \
+  --set controller.volumeMounts[0].name=app-protect-bundles \
+  --set controller.volumeMounts[0].mountPath="/etc/app_protect/bundles/" \
+  --set controller.serviceAccount.imagePullSecretName=regcred \
+  --set controller.mgmt.licenseTokenSecretName=license-token \
+  --set controller.service.type=NodePort \
   -n nginx-ingress
 ```
 
-7. Check NGINX Ingress Controller pod status
+8. Check NGINX Ingress Controller pod status
 
 ```code
 kubectl get pods -n nginx-ingress
@@ -62,10 +76,10 @@ Pod should be in the `Running` state
 
 ```code
 NAME                                            READY   STATUS    RESTARTS   AGE
-nic-nginx-ingress-controller-7d758b8f8b-x4fvt   3/3     Running   0          39s
+nic-nginx-ingress-controller-5f58555756-4wj5p   3/3     Running   0          3m3s
 ```
 
-8. Check NGINX Ingress Controller logs
+9. Check NGINX Ingress Controller logs
 
 ```code
 kubectl logs -l app.kubernetes.io/instance=nic -n nginx-ingress -c nginx-ingress
@@ -74,19 +88,19 @@ kubectl logs -l app.kubernetes.io/instance=nic -n nginx-ingress -c nginx-ingress
 Output should be similar to
 
 ```code
-2026/02/17 11:14:36 [notice] 21#21: exit
-2026/02/17 11:14:36 [notice] 20#20: exit
-I20260217 11:14:36.367856   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress", UID:"307a5ddf-dbcc-46a9-a2e0-c2b0886afdaa", APIVersion:"v1", ResourceVersion:"96841994", FieldPath:""}): type: 'Normal' reason: 'Updated' ConfigMap nginx-ingress/nic-nginx-ingress updated without error
-I20260217 11:14:36.367890   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress-mgmt", UID:"b2ea9af5-c927-45ed-9f2c-2012695bd747", APIVersion:"v1", ResourceVersion:"96841995", FieldPath:""}): type: 'Normal' reason: 'Updated' MGMT ConfigMap nginx-ingress/nic-nginx-ingress-mgmt updated without error
-2026/02/17 11:14:36 [notice] 16#16: signal 17 (SIGCHLD) received from 21
-2026/02/17 11:14:36 [notice] 16#16: worker process 21 exited with code 0
-2026/02/17 11:14:36 [notice] 16#16: signal 29 (SIGIO) received
-2026/02/17 11:14:36 [notice] 16#16: signal 17 (SIGCHLD) received from 20
-2026/02/17 11:14:36 [notice] 16#16: worker process 20 exited with code 0
-2026/02/17 11:14:36 [notice] 16#16: signal 29 (SIGIO) received
+2026/02/20 15:37:47 [notice] 19#19: exiting
+2026/02/20 15:37:47 [notice] 19#19: APP_PROTECT { "event": "waf_disconnected", "enforcer_thread_id": 0, "worker_pid": 19, "mode": "operational", "mode_changed": false}
+2026/02/20 15:37:47 [notice] 20#20: exit
+2026/02/20 15:37:47 [notice] 19#19: exit
+I20260220 15:37:47.143858   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress", UID:"3809804e-dfa3-471c-a394-71bcf1fb6fae", APIVersion:"v1", ResourceVersion:"97585219", FieldPath:""}): type: 'Normal' reason: 'Updated' ConfigMap nginx-ingress/nic-nginx-ingress updated without error
+I20260220 15:37:47.143890   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress-mgmt", UID:"f6b13057-574a-40e8-b792-959a9e0ed542", APIVersion:"v1", ResourceVersion:"97585217", FieldPath:""}): type: 'Normal' reason: 'Updated' MGMT ConfigMap nginx-ingress/nic-nginx-ingress-mgmt updated without error
+2026/02/20 15:37:47 [notice] 12#12: signal 17 (SIGCHLD) received from 19
+2026/02/20 15:37:47 [notice] 12#12: worker process 19 exited with code 0
+2026/02/20 15:37:47 [notice] 12#12: worker process 20 exited with code 0
+2026/02/20 15:37:47 [notice] 12#12: signal 29 (SIGIO) received
 ```
 
-9. Check Kubernetes service status
+10. Check Kubernetes service status
 
 ```code
 kubectl get svc -n nginx-ingress
@@ -95,8 +109,8 @@ kubectl get svc -n nginx-ingress
 NGINX Ingress Controller should be listening on TCP ports 80 and 443
 
 ```code
-NAME                           TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
-nic-nginx-ingress-controller   NodePort   10.103.68.87   <none>        80:32323/TCP,443:32254/TCP   63s
+NAME                           TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+nic-nginx-ingress-controller   NodePort   10.110.58.236   <none>        80:31576/TCP,443:31695/TCP   4m24s
 ```
 
 10. Check the `ingressclass`
@@ -109,14 +123,14 @@ The `nginx` ingressclass should be available
 
 ```code
 NAME    CONTROLLER                     PARAMETERS   AGE
-nginx   nginx.org/ingress-controller   <none>       74s
+nginx   nginx.org/ingress-controller   <none>       4m44s
 ```
 
 ## Build the WAF compiler
 
 1. List available F5 WAF for NGINX compiler versions
 ```code
-curl -s https://private-registry.nginx.com/v2/nap/waf-compiler/tags/list --key <nginx-one-eval.key> --cert <nginx-one-eval.crt>
+curl -s https://private-registry.nginx.com/v2/nap/waf-compiler/tags/list --key <nginx-one-eval.key> --cert <nginx-one-eval.crt> | jq
 ```
 
 2. Set up Docker to authenticate to the privare registry
@@ -131,13 +145,31 @@ cp <nginx-one-eval.key> /etc/docker/certs.d/private-registry.nginx.com/client.ke
 docker login private-registry.nginx.com
 ```
 
-4. Build the F5 WAF for NGINX compiler:
-
+4. Build the F5 WAF for NGINX compiler (`5.11.2` at the time of writing):
 ```code
-docker build --no-cache --platform linux/amd64 \
+docker build -f deployment/Dockerfile --no-cache --platform linux/amd64 \
   --secret id=nginx-crt,src=<nginx-one-eval.crt> \
   --secret id=nginx-key,src=<nginx-one-eval.key> \
-  -t waf-compiler-5.11.0:custom .
+  -t waf-compiler-5.11.2:custom .
+```
+
+5. The output should be similar to
+```code
+[+] Building 67.8s (9/9) FINISHED                                                                                                                                                  docker:default
+ => [internal] load build definition from Dockerfile                                                                                                                                         0.0s
+ => => transferring dockerfile: 1.36kB                                                                                                                                                       0.0s
+ => resolve image config for docker-image://docker.io/docker/dockerfile:1                                                                                                                    0.7s
+ => [auth] docker/dockerfile:pull token for registry-1.docker.io                                                                                                                             0.0s
+ => CACHED docker-image://docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6                                                              0.0s
+ => [internal] load metadata for private-registry.nginx.com/nap/waf-compiler:5.11.0                                                                                                          0.3s
+ => [internal] load .dockerignore                                                                                                                                                            0.0s
+ => => transferring context: 2B                                                                                                                                                              0.0s
+ => CACHED [stage-0 1/2] FROM private-registry.nginx.com/nap/waf-compiler:5.11.0@sha256:aee2af5e9b7a8e2f6b5e3b37e42623514d97470ee033fed514aad61182e0bc94                                     0.0s
+ => [stage-0 2/2] RUN --mount=type=secret,id=nginx-crt,dst=/etc/ssl/nginx/nginx-repo.crt,mode=0644     --mount=type=secret,id=nginx-key,dst=/etc/ssl/nginx/nginx-repo.key,mode=0644     ap  65.9s
+ => exporting to image                                                                                                                                                                       0.3s 
+ => => exporting layers                                                                                                                                                                      0.2s 
+ => => writing image sha256:4dcfcaac1acad8934a193b86c6b46152e72db1fa99cdd81db74d9a7996820792                                                                                                 0.0s 
+ => => naming to docker.io/library/waf-compiler-5.11.2:custom                                                                                                                                0.0s 
 ```
 
 ## Uninstalling
