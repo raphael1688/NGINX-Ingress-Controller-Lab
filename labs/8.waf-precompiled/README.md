@@ -4,6 +4,24 @@ This use case applies WAF protection to a sample application exposed through NGI
 
 NGINX Ingress Controller needs to be deployed with the WAF in precompiled mode, see [DEPLOYING-WAFv5.md](/DEPLOYING-WAFv5.md)
 
+Get NGINX Ingress Controller Node IP, HTTP and HTTPS NodePorts and pod name
+```code
+export NIC_IP=`kubectl get pod -l app.kubernetes.io/instance=nic -n nginx-ingress -o json|jq '.items[0].status.hostIP' -r`
+export HTTP_PORT=`kubectl get svc nic-nginx-ingress-controller -n nginx-ingress -o jsonpath='{.spec.ports[0].nodePort}'`
+export HTTPS_PORT=`kubectl get svc nic-nginx-ingress-controller -n nginx-ingress -o jsonpath='{.spec.ports[1].nodePort}'`
+export NIC_PODNAME=`kubectl get pod -l app.kubernetes.io/instance=nic -n nginx-ingress -o json|jq '.items[0].metadata.name' -r`
+```
+
+Check NGINX Ingress Controller IP address, HTTP and HTTPS ports and pod name
+```code
+echo -e "NIC address: $NIC_IP\nHTTP port  : $HTTP_PORT\nHTTPS port : $HTTPS_PORT\nPod name   : $NIC_PODNAME"
+```
+
+`cd` into the lab directory
+```code
+cd ~/NGINX-Ingress-Controller-Lab/labs/8.waf-precompiled
+```
+
 Compile the policy bundle
 ```code
 cd artifacts
@@ -60,25 +78,19 @@ The output should be similar to
 
 The log profile has been compiled into `log_profile.tgz`
 
+Copy the compiled policy bundle and log profile into the NGINX Ingress Controller pod:
+```code
+kubectl cp waf_policy.tgz $NIC_PODNAME:/etc/app_protect/bundles/ -c nginx-ingress -n nginx-ingress
+kubectl cp log_profile.tgz $NIC_PODNAME:/etc/app_protect/bundles/ -c nginx-ingress -n nginx-ingress
+```
+
+Change directory
+```code
+cd ..
+```
+
 Copy the compiled policy bundle and the compiled log profile to the relevant pods
 
-
-Get NGINX Ingress Controller Node IP, HTTP and HTTPS NodePorts
-```code
-export NIC_IP=`kubectl get pod -l app.kubernetes.io/instance=nic -n nginx-ingress -o json|jq '.items[0].status.hostIP' -r`
-export HTTP_PORT=`kubectl get svc nic-nginx-ingress-controller -n nginx-ingress -o jsonpath='{.spec.ports[0].nodePort}'`
-export HTTPS_PORT=`kubectl get svc nic-nginx-ingress-controller -n nginx-ingress -o jsonpath='{.spec.ports[1].nodePort}'`
-```
-
-Check NGINX Ingress Controller IP address, HTTP and HTTPS ports
-```code
-echo -e "NIC address: $NIC_IP\nHTTP port  : $HTTP_PORT\nHTTPS port : $HTTPS_PORT"
-```
-
-`cd` into the lab directory
-```code
-cd ~/NGINX-Ingress-Controller-Lab/labs/8.waf-precompiled
-```
 
 Deploy the sample web applications
 ```code
@@ -90,27 +102,50 @@ Deploy the syslog service to receive NGINX App Protect security violations logs
 kubectl apply -f 1.syslog.yaml
 ```
 
-Deploy the F5 WAF for NGINX policy resources
-```code
-kubectl apply -f 2.ap-apple-uds.yaml
-```
-
-```code
-kubectl apply -f 3.ap-dataguard-alarm-policy.yaml
-```
-
-```code
-kubectl apply -f 4.ap-logconf.yaml
-```
-
 Deploy the WAF policy
 ```code
-kubectl apply -f 5.waf.yaml
+kubectl apply -f 2.waf.yaml
+```
+
+Describe the WAF policy
+```code
+kubectl describe policy waf-policy
+```
+
+The output should be similar to
+```code
+Name:         waf-policy
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  k8s.nginx.org/v1
+Kind:         Policy
+Metadata:
+  Creation Timestamp:  2026-02-25T16:08:51Z
+  Generation:          1
+  Resource Version:    98780287
+  UID:                 663e319b-17e8-41f5-80c9-7076f40ff6d1
+Spec:
+  Waf:
+    Ap Bundle:  waf_policy.tgz
+    Enable:     true
+    Security Logs:
+      Ap Log Bundle:  log_profile.tgz
+      Enable:         true
+      Log Dest:       syslog:server=syslog-svc.default:514
+Status:
+  Message:  Policy default/waf-policy was added or updated
+  Reason:   AddedOrUpdated
+  State:    Valid
+Events:
+  Type    Reason          Age   From                      Message
+  ----    ------          ----  ----                      -------
+  Normal  AddedOrUpdated  26s   nginx-ingress-controller  Policy default/waf-policy was added or updated
 ```
 
 Publish the application through NGINX Ingress Controller applying the WAF policy
 ```code
-kubectl apply -f 6.virtual-server.yaml
+kubectl apply -f 3.virtual-server.yaml
 ```
 
 Check the newly created `VirtualServer` resource
@@ -201,23 +236,6 @@ Pragma: no-cache
 Content-Length: 247
 
 <html><head><title>Request Rejected</title></head><body>The requested URL was rejected. Please consult with your administrator.<br><br>Your support ID is: 15024425679859283163<br><br><a href='javascript:history.back();'>[Go Back]</a></body></html>
-```
-
-Access the application sending data that matches the user defined signature
-```code
-curl -i -H "Host: webapp.example.com" http://$NIC_IP:$HTTP_PORT -X POST -d "apple"
-```
-
-Output should be similar to
-```code
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-Connection: close
-Cache-Control: no-cache
-Pragma: no-cache
-Content-Length: 246
-
-<html><head><title>Request Rejected</title></head><body>The requested URL was rejected. Please consult with your administrator.<br><br>Your support ID is: 9074180338395228252<br><br><a href='javascript:history.back();'>[Go Back]</a></body></html>
 ```
 
 Check the security violation logs in the `syslog` pod
