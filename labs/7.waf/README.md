@@ -1,6 +1,8 @@
-# NGINX App Protect WAF
+# F5 WAF for NGINX
 
 This use case applies WAF protection to a sample application exposed through NGINX Ingress Controller
+
+NGINX Ingress Controller needs to be deployed with the WAF in non precompiled mode, see [DEPLOYING.md](/DEPLOYING.md)
 
 Get NGINX Ingress Controller Node IP, HTTP and HTTPS NodePorts
 ```code
@@ -16,7 +18,7 @@ echo -e "NIC address: $NIC_IP\nHTTP port  : $HTTP_PORT\nHTTPS port : $HTTPS_PORT
 
 `cd` into the lab directory
 ```code
-cd ~/NGINX-Ingress-Controller-Lab/labs/7.app-protect-waf
+cd ~/NGINX-Ingress-Controller-Lab/labs/7.waf
 ```
 
 Deploy the sample web applications
@@ -29,7 +31,7 @@ Deploy the syslog service to receive NGINX App Protect security violations logs
 kubectl apply -f 1.syslog.yaml
 ```
 
-Deploy the NGINX App Protect policy resources
+Deploy the F5 WAF for NGINX policy resources
 ```code
 kubectl apply -f 2.ap-apple-uds.yaml
 ```

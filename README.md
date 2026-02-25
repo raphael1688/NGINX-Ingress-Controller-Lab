@@ -22,12 +22,15 @@ Prerequisites to use this repository are:
 
 ## Deployment
 
-1. [Deploy](/DEPLOYING.md) NGINX Ingress Controller
-2. [Deploy](labs) use cases
+1. [Deploy](/DEPLOYING.md) NGINX Ingress Controller and F5 WAF for NGINX without precompiled policies - required for labs 1-7, not compatible with lab 8
+2. [Deploy](/DEPLOYING-WAFv5.md) NGINX Ingress Controller and F5 WAF for NGINX with precompiled policies - required for labs 1-6 and 8, not compatible with lab 7
+3. [Deploy](labs) use cases
 
 ## Removal
 
-Follow the instructions [here](/DEPLOYING.md#uninstalling) to uninstall NGINX Ingress Controller
+Follow the instructions to remove NGINX Ingress Controller and F5 WAF for NGINX:
+- [uninstall](/DEPLOYING.md#uninstalling) without precompiled policies 
+- [uninstall](/DEPLOYING-WAFv5.md#uninstalling) with precompiled policies
 
 ## Support
 
