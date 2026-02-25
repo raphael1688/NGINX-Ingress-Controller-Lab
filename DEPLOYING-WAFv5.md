@@ -2,6 +2,8 @@
 
 See the [prerequisites](/README.md#getting-started)
 
+This deployment is for NGINX Ingress Controller and F5 WAF for NGINX with precompiled WAF policies and log profiles
+
 ## Installing
 
 1. Create NGINX Ingress Controller namespace
