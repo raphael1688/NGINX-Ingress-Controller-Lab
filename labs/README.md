@@ -20,7 +20,7 @@ cd NGINX-Ingress-Controller-Lab/labs
 - [Lab 4](4.traffic-splitting) - Traffic splitting
 - [Lab 5](5.access-control) - Access control
 - [Lab 6](6.rate-limiting) - Rate limiting
-- [Lab 7](7.waf) - F5 WAF for NGINX
-- [Lab 7](8.waf-precompiled) - F5 WAF for NGINX using precompiled policies
+- [Lab 7](7.waf) - F5 WAF for NGINX (Requires NGINX Ingress Controller deployment [without precompiled WAF policies](/DEPLOYING.md))
+- [Lab 8](8.waf-precompiled) - F5 WAF for NGINX using precompiled policies (Requires NGINX Ingress Controller deployment [with precompiled WAF policies](/DEPLOYING-WAFv5.md))
 
 The official NGINX Ingress Controller repository provides additional [examples](https://github.com/nginx/kubernetes-ingress/tree/main/examples)
