@@ -135,19 +135,14 @@ nginx   nginx.org/ingress-controller   <none>       4m44s
 curl -s https://private-registry.nginx.com/v2/nap/waf-compiler/tags/list --key <nginx-one-eval.key> --cert <nginx-one-eval.crt> | jq
 ```
 
-2. Set up Docker to authenticate to the privare registry
+2. Set up Docker to authenticate to the private registry
 ```code
-mkdir -p /etc/docker/certs.d/private-registry.nginx.com
-cp <nginx-one-eval.crt> /etc/docker/certs.d/private-registry.nginx.com/client.cert
-cp <nginx-one-eval.key> /etc/docker/certs.d/private-registry.nginx.com/client.key
+sudo mkdir -p /etc/docker/certs.d/private-registry.nginx.com
+sudo cp <nginx-one-eval.crt> /etc/docker/certs.d/private-registry.nginx.com/client.cert
+sudo cp <nginx-one-eval.key> /etc/docker/certs.d/private-registry.nginx.com/client.key
 ```
 
-3. Log in to the Docker registry
-```code
-docker login private-registry.nginx.com
-```
-
-4. Build the F5 WAF for NGINX compiler (`5.11.2` at the time of writing):
+3. Build the F5 WAF for NGINX compiler (`5.11.2` at the time of writing):
 ```code
 docker build -f deployment/Dockerfile --no-cache --platform linux/amd64 \
   --secret id=nginx-crt,src=<nginx-one-eval.crt> \
@@ -155,7 +150,7 @@ docker build -f deployment/Dockerfile --no-cache --platform linux/amd64 \
   -t waf-compiler-5.11.2:custom .
 ```
 
-5. The output should be similar to
+4. The output should be similar to
 ```code
 [+] Building 67.8s (9/9) FINISHED                                                                                                                                                  docker:default
  => [internal] load build definition from Dockerfile                                                                                                                                         0.0s
@@ -163,10 +158,10 @@ docker build -f deployment/Dockerfile --no-cache --platform linux/amd64 \
  => resolve image config for docker-image://docker.io/docker/dockerfile:1                                                                                                                    0.7s
  => [auth] docker/dockerfile:pull token for registry-1.docker.io                                                                                                                             0.0s
  => CACHED docker-image://docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6                                                              0.0s
- => [internal] load metadata for private-registry.nginx.com/nap/waf-compiler:5.11.0                                                                                                          0.3s
+ => [internal] load metadata for private-registry.nginx.com/nap/waf-compiler:5.11.2                                                                                                          0.3s
  => [internal] load .dockerignore                                                                                                                                                            0.0s
  => => transferring context: 2B                                                                                                                                                              0.0s
- => CACHED [stage-0 1/2] FROM private-registry.nginx.com/nap/waf-compiler:5.11.0@sha256:aee2af5e9b7a8e2f6b5e3b37e42623514d97470ee033fed514aad61182e0bc94                                     0.0s
+ => CACHED [stage-0 1/2] FROM private-registry.nginx.com/nap/waf-compiler:5.11.2@sha256:aee2af5e9b7a8e2f6b5e3b37e42623514d97470ee033fed514aad61182e0bc94                                     0.0s
  => [stage-0 2/2] RUN --mount=type=secret,id=nginx-crt,dst=/etc/ssl/nginx/nginx-repo.crt,mode=0644     --mount=type=secret,id=nginx-key,dst=/etc/ssl/nginx/nginx-repo.key,mode=0644     ap  65.9s
  => exporting to image                                                                                                                                                                       0.3s 
  => => exporting layers                                                                                                                                                                      0.2s 
