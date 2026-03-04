@@ -19,6 +19,7 @@ Prerequisites to use this repository are:
 * [jq](https://github.com/jqlang/jq) 
 * Valid NGINX Plus license. You can request a trial license [here](https://www.f5.com/trials/nginx-one)
   * Three files are needed (sample names here are from a trial license): `nginx-one-eval.crt` `nginx-one-eval.key` and `nginx-one-eval.jwt`
+* Docker: required for [precompiled policies](/DEPLOYING-WAFv5.md) and [lab 8](/labs/8.waf-precompiled)
 
 ## Deployment
 
