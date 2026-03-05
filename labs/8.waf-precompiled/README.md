@@ -61,7 +61,7 @@ Compile the WAF log profile
 ```code
 docker run \
   -v $(pwd):$(pwd) \
-  waf-compiler-5.11.0:custom \
+  waf-compiler-5.11.2:custom \
   -l $(pwd)/log_profile.json -o $(pwd)/log_profile.tgz
 ```
 
