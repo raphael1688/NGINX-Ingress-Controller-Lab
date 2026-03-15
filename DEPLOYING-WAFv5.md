@@ -31,7 +31,7 @@ Note: `<nginx-one-eval.jwt>` is the path and filename of your `nginx-one-eval.jw
 4. List available NGINX Ingress Controller docker images that include NGINX App Protect WAF
 
 ```code
-curl -s https://private-registry.nginx.com/v2/nginx-ic-nap/nginx-plus-ingress/tags/list --key <nginx-one-eval.key> --cert <nginx-one-eval.crt> | jq
+curl -s https://private-registry.nginx.com/v2/nginx-ic-nap-v5/nginx-plus-ingress/tags/list --key <nginx-one-eval.key> --cert <nginx-one-eval.crt> | jq
 ```
 
 Note: `<nginx-one-eval.key>` and `<nginx-one-eval.key>` are the path and filename of your `nginx-one-eval.crt` and `nginx-one-eval.crt` files respectively
