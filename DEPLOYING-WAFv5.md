@@ -36,12 +36,12 @@ curl -s https://private-registry.nginx.com/v2/nginx-ic-nap-v5/nginx-plus-ingress
 
 Note: `<nginx-one-eval.key>` and `<nginx-one-eval.key>` are the path and filename of your `nginx-one-eval.crt` and `nginx-one-eval.crt` files respectively
 
-Pick the latest version (`5.3.4` at the time of writing)
+Pick the latest version (`5.4.0` at the time of writing)
 
 5. Apply NGINX Ingress Controller custom resources (make sure the URI below references the latest available `5.x` NGINX Ingress Controller version)
 ```code
-kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.4/deploy/crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.4/deploy/crds-nap-waf.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.4.0/deploy/crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.4.0/deploy/crds-nap-waf.yaml
 ```
 
 6. Create the PVCs to store compiled WAF policy bundles and logging profiles
@@ -53,9 +53,9 @@ kubectl apply -f ./deployment/pvcs.yaml
 
 ```code
 helm install nic oci://ghcr.io/nginx/charts/nginx-ingress \
-  --version 2.4.4 \
+  --version 2.5.0 \
   --set controller.image.repository=private-registry.nginx.com/nginx-ic-nap-v5/nginx-plus-ingress \
-  --set controller.image.tag=5.3.4 \
+  --set controller.image.tag=5.4.0 \
   --set controller.nginxplus=true \
   --set controller.appprotect.enable=true \
   --set controller.appprotect.v5=true \
@@ -77,8 +77,8 @@ kubectl get pods -n nginx-ingress
 Pod should be in the `Running` state
 
 ```code
-NAME                                            READY   STATUS    RESTARTS   AGE
-nic-nginx-ingress-controller-5f58555756-4wj5p   3/3     Running   0          3m3s
+NAME                                           READY   STATUS    RESTARTS   AGE
+nic-nginx-ingress-controller-8b75b59bf-5zcc2   3/3     Running   0          3m28s
 ```
 
 9. Check NGINX Ingress Controller logs
@@ -90,16 +90,16 @@ kubectl logs -l app.kubernetes.io/instance=nic -n nginx-ingress -c nginx-ingress
 Output should be similar to
 
 ```code
-2026/02/20 15:37:47 [notice] 19#19: exiting
-2026/02/20 15:37:47 [notice] 19#19: APP_PROTECT { "event": "waf_disconnected", "enforcer_thread_id": 0, "worker_pid": 19, "mode": "operational", "mode_changed": false}
-2026/02/20 15:37:47 [notice] 20#20: exit
-2026/02/20 15:37:47 [notice] 19#19: exit
-I20260220 15:37:47.143858   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress", UID:"3809804e-dfa3-471c-a394-71bcf1fb6fae", APIVersion:"v1", ResourceVersion:"97585219", FieldPath:""}): type: 'Normal' reason: 'Updated' ConfigMap nginx-ingress/nic-nginx-ingress updated without error
-I20260220 15:37:47.143890   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress-mgmt", UID:"f6b13057-574a-40e8-b792-959a9e0ed542", APIVersion:"v1", ResourceVersion:"97585217", FieldPath:""}): type: 'Normal' reason: 'Updated' MGMT ConfigMap nginx-ingress/nic-nginx-ingress-mgmt updated without error
-2026/02/20 15:37:47 [notice] 12#12: signal 17 (SIGCHLD) received from 19
-2026/02/20 15:37:47 [notice] 12#12: worker process 19 exited with code 0
-2026/02/20 15:37:47 [notice] 12#12: worker process 20 exited with code 0
-2026/02/20 15:37:47 [notice] 12#12: signal 29 (SIGIO) received
+2026/03/23 09:55:24 [notice] 21#21: exit
+2026/03/23 09:55:24 [notice] 20#20: exit
+I20260323 09:55:24.506898   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress", UID:"ff6817b1-1df0-48d8-a245-1e2829295732", APIVersion:"v1", ResourceVersion:"104790719", FieldPath:""}): type: 'Normal' reason: 'Updated' ConfigMap nginx-ingress/nic-nginx-ingress updated without error
+I20260323 09:55:24.506932   1 main.go:112] Event(v1.ObjectReference{Kind:"ConfigMap", Namespace:"nginx-ingress", Name:"nic-nginx-ingress-mgmt", UID:"cf416017-35d2-4a89-b602-e841e0134150", APIVersion:"v1", ResourceVersion:"104790717", FieldPath:""}): type: 'Normal' reason: 'Updated' MGMT ConfigMap nginx-ingress/nic-nginx-ingress-mgmt updated without error
+2026/03/23 09:55:24 [notice] 13#13: signal 17 (SIGCHLD) received from 21
+2026/03/23 09:55:24 [notice] 13#13: worker process 21 exited with code 0
+2026/03/23 09:55:24 [notice] 13#13: signal 29 (SIGIO) received
+2026/03/23 09:55:24 [notice] 13#13: signal 17 (SIGCHLD) received from 20
+2026/03/23 09:55:24 [notice] 13#13: worker process 20 exited with code 0
+2026/03/23 09:55:24 [notice] 13#13: signal 29 (SIGIO) received
 ```
 
 10. Check Kubernetes service status
@@ -111,8 +111,8 @@ kubectl get svc -n nginx-ingress
 NGINX Ingress Controller should be listening on TCP ports 80 and 443
 
 ```code
-NAME                           TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
-nic-nginx-ingress-controller   NodePort   10.110.58.236   <none>        80:31576/TCP,443:31695/TCP   4m24s
+NAME                           TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+nic-nginx-ingress-controller   NodePort   10.111.219.126   <none>        80:30106/TCP,443:31131/TCP   4m25s
 ```
 
 10. Check the `ingressclass`
@@ -125,7 +125,7 @@ The `nginx` ingressclass should be available
 
 ```code
 NAME    CONTROLLER                     PARAMETERS   AGE
-nginx   nginx.org/ingress-controller   <none>       4m44s
+nginx   nginx.org/ingress-controller   <none>       4m45s
 ```
 
 ## Build the WAF compiler
@@ -186,6 +186,6 @@ kubectl delete namespace nginx-ingress
 * Delete custom resources
 
 ```code
-kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.4/deploy/crds.yaml
-kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.3.4/deploy/crds-nap-waf.yaml
+kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.4.0/deploy/crds.yaml
+kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.4.0/deploy/crds-nap-waf.yaml
 ```

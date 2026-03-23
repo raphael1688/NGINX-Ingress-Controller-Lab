@@ -6,7 +6,7 @@ metadata:
   labels:
     type: local
 spec:
-  storageClassName: manual
+#  storageClassName: manual
   capacity:
     storage: 1Gi
   accessModes:
@@ -21,7 +21,7 @@ metadata:
   name: task-pv-claim
   namespace: nginx-ingress
 spec:
-  storageClassName: manual
+#  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
