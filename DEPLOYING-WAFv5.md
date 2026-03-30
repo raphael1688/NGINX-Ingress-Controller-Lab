@@ -130,19 +130,25 @@ nginx   nginx.org/ingress-controller   <none>       4m45s
 
 ## Build the WAF compiler
 
-1. List available F5 WAF for NGINX compiler versions
+1. Clone this repository and `cd` into it
+```code
+git clone https://github.com/f5devcentral/NGINX-Ingress-Controller-Lab.git
+cd NGINX-Ingress-Controller-Lab
+```
+
+2. List available F5 WAF for NGINX compiler versions
 ```code
 curl -s https://private-registry.nginx.com/v2/nap/waf-compiler/tags/list --key <nginx-one-eval.key> --cert <nginx-one-eval.crt> | jq
 ```
 
-2. Set up Docker to authenticate to the private registry
+3. Set up Docker to authenticate to the private registry
 ```code
 sudo mkdir -p /etc/docker/certs.d/private-registry.nginx.com
 sudo cp <nginx-one-eval.crt> /etc/docker/certs.d/private-registry.nginx.com/client.cert
 sudo cp <nginx-one-eval.key> /etc/docker/certs.d/private-registry.nginx.com/client.key
 ```
 
-3. Build the F5 WAF for NGINX compiler (`5.11.2` at the time of writing):
+4. Build the F5 WAF for NGINX compiler (`5.11.2` at the time of writing):
 ```code
 docker build -f deployment/Dockerfile --no-cache --platform linux/amd64 \
   --secret id=nginx-crt,src=<nginx-one-eval.crt> \
@@ -150,7 +156,7 @@ docker build -f deployment/Dockerfile --no-cache --platform linux/amd64 \
   -t waf-compiler-5.11.2:custom .
 ```
 
-4. The output should be similar to
+5. The output should be similar to
 ```code
 [+] Building 67.8s (9/9) FINISHED                                                                                                                                                  docker:default
  => [internal] load build definition from Dockerfile                                                                                                                                         0.0s
@@ -171,19 +177,19 @@ docker build -f deployment/Dockerfile --no-cache --platform linux/amd64 \
 
 ## Uninstalling
 
-* Uninstall NGINX Ingress Controller through its Helm chart
+1. Uninstall NGINX Ingress Controller through its Helm chart
 
 ```code
 helm uninstall nic -n nginx-ingress
 ```
 
-* Delete the namespace
+2. Delete the namespace
 
 ```code
 kubectl delete namespace nginx-ingress
 ```
 
-* Delete custom resources
+2. Delete custom resources
 
 ```code
 kubectl delete -f https://raw.githubusercontent.com/nginx/kubernetes-ingress/v5.4.0/deploy/crds.yaml
